@@ -49,10 +49,10 @@ tailwind.config = {
   theme: {
     extend: {
       colors: {
-        primary: "#2563eb",
-        accent: "#22c55e",
+        primary: "#495f8f",
+        accent: "#3a5e47",
         dark: "#0f172a",
-        soft: "#f8fafc"
+        soft: "#094e92"
       }
     }
   }
@@ -468,7 +468,7 @@ tailwind.config = {
     </div>
 
     <div class="border-t border-slate-800 text-center py-5 text-sm text-slate-500">
-        © 2026 HotelSys. All rights reserved.
+        © 2025 HotelSys. All rights reserved.
     </div>
 </footer>
 
