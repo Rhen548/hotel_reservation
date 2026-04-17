@@ -49,10 +49,10 @@ tailwind.config = {
   theme: {
     extend: {
       colors: {
-        primary: "#495f8f",
-        accent: "#3a5e47",
+        primary: "#2563eb",
+        accent: "#22c553",
         dark: "#0f172a",
-        soft: "#094e92"
+        soft: "#f8fafc",
       }
     }
   }
