@@ -468,7 +468,7 @@ tailwind.config = {
     </div>
 
     <div class="border-t border-slate-800 text-center py-5 text-sm text-slate-500">
-        © 2025 HotelSys. All rights reserved.
+        © 2026 HotelSys. All rights reserved.
     </div>
 </footer>
 
