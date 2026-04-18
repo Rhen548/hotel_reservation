@@ -2,6 +2,7 @@
 <?php
 $title = "Admin Reservation Dashboard";
 $error_msg = '';
+$reservations = [];
 
 try {
     $pdo = new PDO(
@@ -21,6 +22,9 @@ try {
             r.total_amount,
             r.status,
             r.special_requests,
+            r.cancel_requested,
+            r.cancellation_reason,
+            r.cancelled_at,
 
             c.customer_id,
             c.first_name,
@@ -67,6 +71,7 @@ function statusBadgeClass($status) {
             return 'bg-gray-100 text-gray-800';
     }
 }
+
 function canConfirm($status) {
     return $status === 'pending';
 }
@@ -81,6 +86,27 @@ function canCheckIn($status) {
 
 function canCheckOut($status) {
     return $status === 'checked_in';
+}
+
+$totalReservations = count($reservations);
+$pendingCount = 0;
+$confirmedCount = 0;
+$checkedInCount = 0;
+$cancelRequestsCount = 0;
+
+foreach ($reservations as $reservation) {
+    if ($reservation['status'] === 'pending') {
+        $pendingCount++;
+    }
+    if ($reservation['status'] === 'confirmed') {
+        $confirmedCount++;
+    }
+    if ($reservation['status'] === 'checked_in') {
+        $checkedInCount++;
+    }
+    if ((int)($reservation['cancel_requested'] ?? 0) === 1) {
+        $cancelRequestsCount++;
+    }
 }
 ?>
 <!DOCTYPE html>
@@ -108,7 +134,7 @@ function canCheckOut($status) {
     <div class="flex min-h-screen">
 
         <!-- Sidebar -->
-       <aside class="w-72 bg-slate-900 text-white p-6 hidden lg:block">
+        <aside class="w-72 bg-slate-900 text-white p-6 hidden lg:block">
             <h1 class="text-2xl font-extrabold mb-8">Hotel Admin</h1>
 
             <nav class="space-y-3">
@@ -118,8 +144,8 @@ function canCheckOut($status) {
                 <a href="<?= url('admin/reports') ?>" class="block px-4 py-3 rounded-xl hover:bg-slate-800 transition">Reports</a>
                 <a href="<?= url('admin/rooms') ?>" class="block px-4 py-3 rounded-xl hover:bg-slate-800 transition">Rooms</a>
                 <a href="<?= url('admin/room-images') ?>" class="block px-4 py-3 rounded-xl hover:bg-slate-800 transition">Room Images</a>
-                 <a href="<?= url('admin/audit-logs') ?>" class="block px-4 py-3 rounded-xl hover:bg-slate-800 transition">Audit Logs</a>
-                <a href="<?= url('admin/logout') ?>"  class="block px-4 py-3 rounded-xl hover:bg-slate-800 transition">Logout</a>
+                <a href="<?= url('admin/audit-logs') ?>" class="block px-4 py-3 rounded-xl hover:bg-slate-800 transition">Audit Logs</a>
+                <a href="<?= url('admin/logout') ?>" class="block px-4 py-3 rounded-xl hover:bg-slate-800 transition">Logout</a>
             </nav>
         </aside>
 
@@ -127,7 +153,7 @@ function canCheckOut($status) {
         <main class="flex-1 p-6 lg:p-8">
             <div class="mb-8">
                 <h2 class="text-3xl font-extrabold text-slate-900">Reservation Dashboard</h2>
-                <p class="text-slate-500 mt-2">Manage bookings, statuses, and guest stays.</p>
+                <p class="text-slate-500 mt-2">Manage bookings, statuses, guest stays, and cancellation requests.</p>
             </div>
 
             <?php if (!empty($_GET['success'])): ?>
@@ -142,37 +168,50 @@ function canCheckOut($status) {
                 </div>
             <?php endif; ?>
 
+            <?php if (!empty($_SESSION['success'])): ?>
+                <div class="mb-6 bg-green-100 border border-green-200 text-green-700 px-4 py-3 rounded-xl">
+                    <?= htmlspecialchars($_SESSION['success']) ?>
+                </div>
+                <?php unset($_SESSION['success']); ?>
+            <?php endif; ?>
+
+            <?php if (!empty($_SESSION['error'])): ?>
+                <div class="mb-6 bg-red-100 border border-red-200 text-red-700 px-4 py-3 rounded-xl">
+                    <?= htmlspecialchars($_SESSION['error']) ?>
+                </div>
+                <?php unset($_SESSION['error']); ?>
+            <?php endif; ?>
+
             <?php if (!empty($error_msg)): ?>
                 <div class="mb-6 bg-red-100 border border-red-200 text-red-700 px-4 py-3 rounded-xl">
                     <?= htmlspecialchars($error_msg) ?>
                 </div>
             <?php endif; ?>
 
-            <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+            <div class="grid grid-cols-1 md:grid-cols-5 gap-4 mb-8">
                 <div class="bg-white rounded-2xl p-5 shadow">
                     <p class="text-sm text-slate-500">Total Reservations</p>
-                    <h3 class="text-3xl font-extrabold text-slate-900 mt-2"><?= count($reservations) ?></h3>
+                    <h3 class="text-3xl font-extrabold text-slate-900 mt-2"><?= $totalReservations ?></h3>
                 </div>
 
                 <div class="bg-white rounded-2xl p-5 shadow">
                     <p class="text-sm text-slate-500">Pending</p>
-                    <h3 class="text-3xl font-extrabold text-yellow-600 mt-2">
-                        <?= count(array_filter($reservations, fn($r) => $r['status'] === 'pending')) ?>
-                    </h3>
+                    <h3 class="text-3xl font-extrabold text-yellow-600 mt-2"><?= $pendingCount ?></h3>
                 </div>
 
                 <div class="bg-white rounded-2xl p-5 shadow">
                     <p class="text-sm text-slate-500">Confirmed</p>
-                    <h3 class="text-3xl font-extrabold text-blue-600 mt-2">
-                        <?= count(array_filter($reservations, fn($r) => $r['status'] === 'confirmed')) ?>
-                    </h3>
+                    <h3 class="text-3xl font-extrabold text-blue-600 mt-2"><?= $confirmedCount ?></h3>
                 </div>
 
                 <div class="bg-white rounded-2xl p-5 shadow">
                     <p class="text-sm text-slate-500">Checked In</p>
-                    <h3 class="text-3xl font-extrabold text-green-600 mt-2">
-                        <?= count(array_filter($reservations, fn($r) => $r['status'] === 'checked_in')) ?>
-                    </h3>
+                    <h3 class="text-3xl font-extrabold text-green-600 mt-2"><?= $checkedInCount ?></h3>
+                </div>
+
+                <div class="bg-white rounded-2xl p-5 shadow">
+                    <p class="text-sm text-slate-500">Cancel Requests</p>
+                    <h3 class="text-3xl font-extrabold text-amber-600 mt-2"><?= $cancelRequestsCount ?></h3>
                 </div>
             </div>
 
@@ -195,29 +234,39 @@ function canCheckOut($status) {
                                 <th class="px-6 py-4 font-semibold">Actions</th>
                             </tr>
                         </thead>
+
                         <tbody class="divide-y divide-slate-200">
                             <?php if (!empty($reservations)): ?>
                                 <?php foreach ($reservations as $row): ?>
-                                    <tr class="hover:bg-slate-50">
+                                    <?php
+                                        $hasCancelRequest = (int)($row['cancel_requested'] ?? 0) === 1;
+                                    ?>
+                                    <tr class="hover:bg-slate-50 align-top">
                                         <td class="px-6 py-4">
                                             <div class="font-bold text-slate-900">#<?= htmlspecialchars($row['reservation_id']) ?></div>
                                             <div class="text-sm text-slate-500">
                                                 <?= htmlspecialchars($row['reservation_date']) ?>
                                             </div>
+
+                                            <?php if ($hasCancelRequest): ?>
+                                                <div class="mt-3 inline-flex px-3 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-800">
+                                                    Cancel Request Pending
+                                                </div>
+                                            <?php endif; ?>
                                         </td>
 
                                         <td class="px-6 py-4">
                                             <div class="font-semibold text-slate-900">
-                                                <?= htmlspecialchars($row['first_name'] . ' ' . $row['last_name']) ?>
+                                                <?= htmlspecialchars(($row['first_name'] ?? '') . ' ' . ($row['last_name'] ?? '')) ?>
                                             </div>
-                                            <div class="text-sm text-slate-500"><?= htmlspecialchars($row['email']) ?></div>
-                                            <div class="text-sm text-slate-500"><?= htmlspecialchars($row['phone']) ?></div>
+                                            <div class="text-sm text-slate-500"><?= htmlspecialchars($row['email'] ?? '') ?></div>
+                                            <div class="text-sm text-slate-500"><?= htmlspecialchars($row['phone'] ?? '') ?></div>
                                         </td>
 
                                         <td class="px-6 py-4">
                                             <?php if (!empty($row['room_number'])): ?>
                                                 <div class="font-semibold text-slate-900">Room <?= htmlspecialchars($row['room_number']) ?></div>
-                                                <div class="text-sm text-slate-500"><?= htmlspecialchars($row['room_type']) ?></div>
+                                                <div class="text-sm text-slate-500"><?= htmlspecialchars($row['room_type'] ?? '') ?></div>
                                             <?php else: ?>
                                                 <span class="text-slate-400">No room assigned</span>
                                             <?php endif; ?>
@@ -230,6 +279,12 @@ function canCheckOut($status) {
                                             <div class="text-sm text-slate-900">
                                                 <span class="font-semibold">Out:</span> <?= htmlspecialchars($row['check_out_date']) ?>
                                             </div>
+
+                                            <?php if (!empty($row['cancelled_at'])): ?>
+                                                <div class="text-xs text-red-600 mt-2">
+                                                    Cancelled at: <?= htmlspecialchars($row['cancelled_at']) ?>
+                                                </div>
+                                            <?php endif; ?>
                                         </td>
 
                                         <td class="px-6 py-4 text-slate-900 font-medium">
@@ -237,53 +292,80 @@ function canCheckOut($status) {
                                         </td>
 
                                         <td class="px-6 py-4 text-slate-900 font-bold">
-                                            ₱<?= number_format((float)$row['total_amount'], 2) ?>
+                                            ₱<?= number_format((float)($row['total_amount'] ?? 0), 2) ?>
                                         </td>
 
                                         <td class="px-6 py-4">
                                             <span class="inline-flex px-3 py-1 rounded-full text-sm font-semibold <?= statusBadgeClass($row['status']) ?>">
                                                 <?= htmlspecialchars($row['status']) ?>
                                             </span>
+
+                                            <?php if ($hasCancelRequest && !empty($row['cancellation_reason'])): ?>
+                                                <div class="mt-3 rounded-xl border border-amber-200 bg-amber-50 p-3">
+                                                    <div class="text-xs font-bold text-amber-800 mb-1">Cancellation Reason</div>
+                                                    <div class="text-sm text-amber-900">
+                                                        <?= nl2br(htmlspecialchars($row['cancellation_reason'])) ?>
+                                                    </div>
+                                                </div>
+                                            <?php endif; ?>
                                         </td>
 
                                         <td class="px-6 py-4">
                                             <div class="flex flex-wrap gap-2">
-                                                <?php if (canConfirm($row['status'])): ?>
+                                                <?php if (canConfirm($row['status']) && !$hasCancelRequest): ?>
                                                     <form method="POST" action="<?= url('admin/reservations/action') ?>">
                                                         <input type="hidden" name="reservation_id" value="<?= htmlspecialchars($row['reservation_id']) ?>">
                                                         <input type="hidden" name="action" value="confirm">
-                                                        <button class="bg-blue-600 text-white px-3 py-2 rounded-lg text-sm hover:bg-blue-700 transition">
+                                                        <button type="submit" class="bg-blue-600 text-white px-3 py-2 rounded-lg text-sm hover:bg-blue-700 transition">
                                                             Confirm
                                                         </button>
                                                     </form>
                                                 <?php endif; ?>
 
-                                                <?php if (canCancel($row['status'])): ?>
+                                                <?php if (canCancel($row['status']) && !$hasCancelRequest): ?>
                                                     <form method="POST" action="<?= url('admin/reservations/action') ?>">
                                                         <input type="hidden" name="reservation_id" value="<?= htmlspecialchars($row['reservation_id']) ?>">
                                                         <input type="hidden" name="action" value="cancel">
-                                                        <button class="bg-red-600 text-white px-3 py-2 rounded-lg text-sm hover:bg-red-700 transition">
+                                                        <button type="submit" class="bg-red-600 text-white px-3 py-2 rounded-lg text-sm hover:bg-red-700 transition">
                                                             Cancel
                                                         </button>
                                                     </form>
                                                 <?php endif; ?>
 
-                                                <?php if (canCheckIn($row['status'])): ?>
+                                                <?php if (canCheckIn($row['status']) && !$hasCancelRequest): ?>
                                                     <form method="POST" action="<?= url('admin/reservations/action') ?>">
                                                         <input type="hidden" name="reservation_id" value="<?= htmlspecialchars($row['reservation_id']) ?>">
                                                         <input type="hidden" name="action" value="check_in">
-                                                        <button class="bg-green-600 text-white px-3 py-2 rounded-lg text-sm hover:bg-green-700 transition">
+                                                        <button type="submit" class="bg-green-600 text-white px-3 py-2 rounded-lg text-sm hover:bg-green-700 transition">
                                                             Check In
                                                         </button>
                                                     </form>
                                                 <?php endif; ?>
 
-                                                <?php if (canCheckOut($row['status'])): ?>
+                                                <?php if (canCheckOut($row['status']) && !$hasCancelRequest): ?>
                                                     <form method="POST" action="<?= url('admin/reservations/action') ?>">
                                                         <input type="hidden" name="reservation_id" value="<?= htmlspecialchars($row['reservation_id']) ?>">
                                                         <input type="hidden" name="action" value="check_out">
-                                                        <button class="bg-slate-700 text-white px-3 py-2 rounded-lg text-sm hover:bg-slate-800 transition">
+                                                        <button type="submit" class="bg-slate-700 text-white px-3 py-2 rounded-lg text-sm hover:bg-slate-800 transition">
                                                             Check Out
+                                                        </button>
+                                                    </form>
+                                                <?php endif; ?>
+
+                                                <?php if ($hasCancelRequest): ?>
+                                                    <form method="POST" action="<?= url('admin/cancel-request-action') ?>">
+                                                        <input type="hidden" name="reservation_id" value="<?= htmlspecialchars($row['reservation_id']) ?>">
+                                                        <input type="hidden" name="action" value="approve">
+                                                        <button type="submit" class="bg-green-600 text-white px-3 py-2 rounded-lg text-sm hover:bg-green-700 transition">
+                                                            Approve Request
+                                                        </button>
+                                                    </form>
+
+                                                    <form method="POST" action="<?= url('admin/cancel-request-action') ?>">
+                                                        <input type="hidden" name="reservation_id" value="<?= htmlspecialchars($row['reservation_id']) ?>">
+                                                        <input type="hidden" name="action" value="reject">
+                                                        <button type="submit" class="bg-amber-600 text-white px-3 py-2 rounded-lg text-sm hover:bg-amber-700 transition">
+                                                            Reject Request
                                                         </button>
                                                     </form>
                                                 <?php endif; ?>

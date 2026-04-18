@@ -74,3 +74,7 @@ $router->post('/customer-profile', 'app/views/customer_profile.php');
 $router->get('/customer-signout', 'app/views/customer_signout.php');
 
 $router->get('/my-reservations', 'app/views/my_reservations.php');
+
+$router->post('/reservation/cancel-request', 'app/views/booking/cancel_reservation_request.php');
+
+$router->post('/admin/cancel-request-action', 'app/views/admin/cancel_request_action.php');
