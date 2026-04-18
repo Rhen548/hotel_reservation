@@ -73,3 +73,4 @@ $router->post('/customer-profile', 'app/views/customer_profile.php');
 
 $router->get('/customer-signout', 'app/views/customer_signout.php');
 
+$router->get('/my-reservations', 'app/views/my_reservations.php');

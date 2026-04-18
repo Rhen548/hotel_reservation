@@ -113,6 +113,13 @@ tailwind.config = {
                         </div>
 
                         <a
+                            href="<?= url('my-reservations') ?>"
+                            class="block px-4 py-3 text-slate-700 hover:bg-slate-100 font-medium"
+                        >
+                             My Reservations
+                        </a>
+
+                        <a
                             href="<?= url('customer-profile') ?>"
                             class="block px-4 py-3 text-slate-700 hover:bg-slate-100 font-medium"
                         >
